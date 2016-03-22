@@ -6,6 +6,8 @@ import sys
 import traceback
 from random import *
 from pygame.locals import *
+
+import bullet
 import myplane
 import enemy
 
@@ -86,6 +88,12 @@ def main():
     e2_destroy_index = 0
     e3_destroy_index = 0
     me_destroy_index = 0
+    # ====================生成普通子弹====================
+    bullet1 = []
+    bullet1_index = 0
+    bullet1_num = 6  # 定义子弹实例化个数
+    for i in range(bullet1_num):
+        bullet1.append(bullet.Bullet1(me.rect.midtop))
 
     while running:
         screen.blit(backgroud, (0, 0))  # 将背景图片打印到内存的屏幕上
@@ -104,6 +112,21 @@ def main():
         if key_pressed[K_d] or key_pressed[K_RIGHT]:
             me.move_right()
 
+        if not (delay % 10):  # 每十帧发射一颗移动的子弹
+            bullet_sound.play()
+            bullets = bullet1
+            bullets[bullet1_index].reset(me.rect.midtop)
+            bullet1_index = (bullet1_index + 1) % bullet1_num
+        # ====================子弹与敌机的碰撞检测====================
+        for b in bullets:
+            if b.active:  # 只有激活的子弹才可能击中敌机
+                b.move()
+                screen.blit(b.image, b.rect)
+                enemies_hit = pygame.sprite.spritecollide(b, enemies, False, pygame.sprite.collide_mask)
+                if enemies_hit:  # 如果子弹击中飞机
+                    b.active = False  # 子弹损毁
+                    for e in enemies_hit:
+                        e.active = False  # 小型敌机损毁
         # ====================我方飞机碰撞检测====================
         enemies_down = pygame.sprite.spritecollide(me, enemies, False, pygame.sprite.collide_mask)
         if enemies_down:  # 如果碰撞检测返回的列表非空，则说明已发生碰撞,若此时我方飞机处于无敌状态
