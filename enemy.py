@@ -37,6 +37,8 @@ class SmallEnemy(pygame.sprite.Sprite):
 
 
 class MidEnemy(pygame.sprite.Sprite):
+    energy = 5
+
     def __init__(self, bg_size):
         pygame.sprite.Sprite.__init__(self)
         self.image = pygame.image.load("image/enemy2.png")  # 加载敌方飞机图片
@@ -46,6 +48,7 @@ class MidEnemy(pygame.sprite.Sprite):
                                     pygame.image.load("image/enemy2_down2.png"),
                                     pygame.image.load("image/enemy2_down3.png"),
                                     pygame.image.load("image/enemy2_down4.png")])
+        self.image_hit = pygame.image.load("image/enemy2_hit.png")  # 加载中型敌机中弹图片
         self.rect = self.image.get_rect()  # 获得敌方飞机的位置
         self.width, self.height = bg_size[0], bg_size[1]  # 本地化背景图片位置
         self.speed = 1  # 设置敌机的速度
@@ -53,6 +56,8 @@ class MidEnemy(pygame.sprite.Sprite):
                                          randint(-10 * self.rect.height, -self.rect.height)
                                          )
         self.active = True  # 设置飞机当前的存在属性，True表示飞机正常飞行，False表示飞机已损毁
+        self.energy = MidEnemy.energy
+        self.hit = False  # 飞机是否被击中标志位
 
     def move(self):  # 定义敌机的移动函数
         if self.rect.top < self.height:
@@ -65,9 +70,13 @@ class MidEnemy(pygame.sprite.Sprite):
                                          randint(-10 * self.rect.height, -self.rect.height)
                                          )
         self.active = True
+        self.energy = MidEnemy.energy
+        self.hit = False
 
 
 class BigEnemy(pygame.sprite.Sprite):
+    energy = 15
+
     def __init__(self, bg_size):
         pygame.sprite.Sprite.__init__(self)
         self.image1 = pygame.image.load("image/enemy3_n1.png")  # 加载敌方飞机图片,大型飞机有帧切换的特效
@@ -80,6 +89,7 @@ class BigEnemy(pygame.sprite.Sprite):
                                     pygame.image.load("image/enemy3_down4.png"),
                                     pygame.image.load("image/enemy3_down5.png"),
                                     pygame.image.load("image/enemy3_down6.png")])
+        self.image_hit = pygame.image.load("image/enemy3_hit.png")  # 加载大型敌机中弹图片
         self.rect = self.image1.get_rect()  # 获得敌方飞机的位置
         self.width, self.height = bg_size[0], bg_size[1]  # 本地化背景图片位置
         self.speed = 2  # 设置敌机的速度
@@ -87,6 +97,8 @@ class BigEnemy(pygame.sprite.Sprite):
                                          randint(-15 * self.rect.height, -5 * self.rect.height)
                                          )
         self.active = True  # 设置飞机当前的存在属性，True表示飞机正常飞行，False表示飞机已损毁
+        self.energy = BigEnemy.energy
+        self.hit = False  # 飞机是否被击中标志位
 
     def move(self):  # 定义敌机的移动函数
         if self.rect.top < self.height:
@@ -99,3 +111,5 @@ class BigEnemy(pygame.sprite.Sprite):
                                          randint(-15 * self.rect.height, -5 * self.rect.height)
                                          )
         self.active = True
+        self.energy = BigEnemy.energy
+        self.hit = False
