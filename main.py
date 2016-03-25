@@ -88,6 +88,11 @@ def main():
     e2_destroy_index = 0
     e3_destroy_index = 0
     me_destroy_index = 0
+
+    color_black = (0, 0, 0)
+    color_green = (0, 255, 0)
+    color_red = (255, 0, 0)
+    color_white = (255, 255, 255)
     # ====================生成普通子弹====================
     bullet1 = []
     bullet1_index = 0
@@ -126,7 +131,13 @@ def main():
                 if enemies_hit:  # 如果子弹击中飞机
                     b.active = False  # 子弹损毁
                     for e in enemies_hit:
-                        e.active = False  # 小型敌机损毁
+                        if e in big_enemies or e in mid_enemies:
+                            e.energy -= 1
+                            e.hit = True  # 表示飞机已经被击中
+                            if e.energy == 0:
+                                e.active = False  # 大中型敌机损毁
+                        else:
+                            e.active = False  # 小型敌机损毁
         # ====================我方飞机碰撞检测====================
         enemies_down = pygame.sprite.spritecollide(me, enemies, False, pygame.sprite.collide_mask)
         if enemies_down:  # 如果碰撞检测返回的列表非空，则说明已发生碰撞,若此时我方飞机处于无敌状态
@@ -152,6 +163,70 @@ def main():
                 if me_destroy_index == 0:
                     me_down_sound.play()
                     me.reset()
+        # ====================绘制敌方飞机，由大到小进行绘制，避免速度快的小飞机被覆盖====================
+        for each in big_enemies:  # 绘制大型敌机并自动移动
+            if each.active:
+                each.move()
+                if not each.hit:
+                    if switch_image:
+                        screen.blit(each.image1, each.rect)  # 绘制大型敌机的两种不同的形式
+                    else:
+                        screen.blit(each.image2, each.rect)
+                else:
+                    screen.blit(each.image_hit, each.rect)
+                    each.hit = False
+                # ====================绘制血槽==============
+                pygame.draw.line(screen, color_black, (each.rect.left, each.rect.top - 5),
+                                 (each.rect.right, each.rect.top - 5), 2)
+                energy_remain = each.energy / enemy.BigEnemy.energy
+                if energy_remain > 0.2:  # 如果血量大约百分之二十则为绿色，否则为红色
+                    energy_color = color_green
+                else:
+                    energy_color = color_red
+                pygame.draw.line(screen, energy_color, (each.rect.left, each.rect.top - 5),
+                                 (each.rect.left + each.rect.width * energy_remain, each.rect.top - 5), 2)
+                if each.rect.bottom == -50:
+                    big_enemy_flying_sound.play(-1)  # 播放大型飞机的音效(循环播放)
+            else:
+                big_enemy_flying_sound.stop()
+                if e3_destroy_index == 0:
+                    enemy3_down_sound.play()  # 播放飞机撞毁音效
+                if not (delay % 3):  # 每三帧播放一张损毁图片
+                    screen.blit(each.destroy_images[e3_destroy_index], each.rect)
+                    e3_destroy_index = (e3_destroy_index + 1) % 6  # 大型敌机有六张损毁图片
+                    if e3_destroy_index == 0:  # 如果损毁图片播放完毕，则重置飞机属性
+                        each.reset()
+
+        for each in mid_enemies:
+            if each.active:
+                each.move()
+                if not each.hit:
+                    screen.blit(each.image, each.rect)
+                else:
+                    screen.blit(each.image_hit, each.rect)
+                    each.hit = False
+                # ====================绘制血槽====================
+                pygame.draw.line(screen, color_black,
+                                 (each.rect.left, each.rect.top - 5),
+                                 (each.rect.right, each.rect.top - 5),
+                                 2)
+                energy_remain = each.energy / enemy.MidEnemy.energy
+                if energy_remain > 0.2:  # 如果血量大约百分之二十则为绿色，否则为红色
+                    energy_color = color_green
+                else:
+                    energy_color = color_red
+                pygame.draw.line(screen, energy_color,
+                                 (each.rect.left, each.rect.top - 5),
+                                 (each.rect.left + each.rect.width * energy_remain, each.rect.top - 5),
+                                 2)
+            else:
+                if e2_destroy_index == 0:
+                    enemy2_down_sound.play()
+                if not (delay % 3):
+                    screen.blit(each.destroy_images[e2_destroy_index], each.rect)
+                    e2_destroy_index = (e2_destroy_index + 1) % 4
+                    if e2_destroy_index == 0:
+                        each.reset()
 
         for each in small_enemies:  # 绘制小型敌机并自动移动
             if each.active:
@@ -164,38 +239,6 @@ def main():
                     screen.blit(each.destroy_images[e1_destroy_index], each.rect)
                     e1_destroy_index = (e1_destroy_index + 1) % 4
                     if e1_destroy_index == 0:
-                        each.reset()
-
-        for each in mid_enemies:
-            if each.active:
-                each.move()
-                screen.blit(each.image, each.rect)
-            else:
-                if e2_destroy_index == 0:
-                    enemy2_down_sound.play()
-                if not (delay % 3):
-                    screen.blit(each.destroy_images[e2_destroy_index], each.rect)
-                    e2_destroy_index = (e2_destroy_index + 1) % 4
-                    if e2_destroy_index == 0:
-                        each.reset()
-
-        for each in big_enemies:  # 绘制大型敌机并自动移动
-            if each.active:
-                each.move()
-                if switch_image:
-                    screen.blit(each.image1, each.rect)  # 绘制大型敌机的两种不同的形式
-                else:
-                    screen.blit(each.image2, each.rect)
-                if each.rect.bottom == -50:
-                    big_enemy_flying_sound.play(-1)
-            else:
-                big_enemy_flying_sound.stop()
-                if e3_destroy_index == 0:
-                    enemy3_down_sound.play()  # 播放飞机撞毁音效
-                if not (delay % 3):  # 每三帧播放一张损毁图片
-                    screen.blit(each.destroy_images[e3_destroy_index], each.rect)
-                    e3_destroy_index = (e3_destroy_index + 1) % 6  # 大型敌机有六张损毁图片
-                    if e3_destroy_index == 0:  # 如果损毁图片播放完毕，则重置飞机属性
                         each.reset()
 
         pygame.display.flip()  # 将内存中绘制好的屏幕刷新到设备屏幕上
