@@ -68,6 +68,12 @@ def add_big_enemies(group1, group2, num):
         group2.add(e3)
 
 
+# ====================提升敌机速度==========
+def inc_speed(target, inc):
+    for each in target:
+        each.speed += inc
+
+
 def main():
     clock = pygame.time.Clock()  # 设置帧率
     switch_image = False  # 控制飞机图片切换的标志位（用以模拟发动机喷火效果）
@@ -75,6 +81,8 @@ def main():
     pygame.mixer.music.play(-1)  # 循环播放背景音乐
     running = True
     me = myplane.MyPlane(bg_size)  # 生成我方飞机
+    score = 0
+    score_font = pygame.font.SysFont("arial", 48)  # 分数字体
     # ====================实例化敌方飞机====================
     enemies = pygame.sprite.Group()  # 生成敌方飞机组
     small_enemies = pygame.sprite.Group()  # 敌方小型飞机组
@@ -93,6 +101,8 @@ def main():
     color_green = (0, 255, 0)
     color_red = (255, 0, 0)
     color_white = (255, 255, 255)
+
+    level = 1  # 游戏难度级别
     # ====================生成普通子弹====================
     bullet1 = []
     bullet1_index = 0
@@ -102,6 +112,34 @@ def main():
 
     while running:
         screen.blit(backgroud, (0, 0))  # 将背景图片打印到内存的屏幕上
+        score_text = score_font.render("Score: %s" % str(score), True, color_white)
+        screen.blit(score_text, (10, 5))
+        # ====================定义难度递进操作==========
+        if level == 1 and score > 5000:
+            level = 2  # 增加3小，2中，1大，提高小型敌机速度
+            level_up_sound.play()
+            add_small_enemies(small_enemies, enemies, 3)
+            add_mid_enemies(mid_enemies, enemies, 2)
+            add_big_enemies(big_enemies, enemies, 1)
+            inc_speed(small_enemies, 1)
+        elif level == 2 and score > 30000:
+            level = 3
+            level_up_sound.play()
+            add_small_enemies(small_enemies, enemies, 3)
+            add_mid_enemies(mid_enemies, enemies, 2)
+            add_big_enemies(big_enemies, enemies, 1)
+            inc_speed(small_enemies, 1)
+            inc_speed(mid_enemies, 1)
+        elif level == 3 and score > 60000:
+            level = 4
+            level_up_sound.play()
+            add_small_enemies(small_enemies, enemies, 3)
+            add_mid_enemies(mid_enemies, enemies, 2)
+            add_big_enemies(big_enemies, enemies, 1)
+            inc_speed(small_enemies, 1)
+            inc_speed(mid_enemies, 1)
+            inc_speed(big_enemies, 1)
+
         for event in pygame.event.get():  # 响应用户的偶然操作
             if event.type == QUIT:  # 如果用户按下屏幕上的关闭按钮，触发QUIT事件，程序退出
                 pygame.quit()
@@ -195,6 +233,7 @@ def main():
                     screen.blit(each.destroy_images[e3_destroy_index], each.rect)
                     e3_destroy_index = (e3_destroy_index + 1) % 6  # 大型敌机有六张损毁图片
                     if e3_destroy_index == 0:  # 如果损毁图片播放完毕，则重置飞机属性
+                        score += 6000
                         each.reset()
 
         for each in mid_enemies:
@@ -226,6 +265,7 @@ def main():
                     screen.blit(each.destroy_images[e2_destroy_index], each.rect)
                     e2_destroy_index = (e2_destroy_index + 1) % 4
                     if e2_destroy_index == 0:
+                        score += 2000
                         each.reset()
 
         for each in small_enemies:  # 绘制小型敌机并自动移动
@@ -239,6 +279,7 @@ def main():
                     screen.blit(each.destroy_images[e1_destroy_index], each.rect)
                     e1_destroy_index = (e1_destroy_index + 1) % 4
                     if e1_destroy_index == 0:
+                        score += 500
                         each.reset()
 
         pygame.display.flip()  # 将内存中绘制好的屏幕刷新到设备屏幕上
