@@ -6,10 +6,10 @@ import sys
 import traceback
 from random import *
 from pygame.locals import *
-
 import bullet
 import myplane
 import enemy
+import supply
 
 # ==========初始化===================
 pygame.init()
@@ -83,24 +83,16 @@ def main():
     me = myplane.MyPlane(bg_size)  # 生成我方飞机
     score = 0
     score_font = pygame.font.SysFont("arial", 48)  # 分数字体
-    # ====================实例化敌方飞机====================
-    enemies = pygame.sprite.Group()  # 生成敌方飞机组
-    small_enemies = pygame.sprite.Group()  # 敌方小型飞机组
-    add_small_enemies(small_enemies, enemies, 1)  # 生成若干敌方小型飞机
-    mid_enemies = pygame.sprite.Group()  # 敌方中型飞机组
-    add_mid_enemies(mid_enemies, enemies, 1)  # 生成若干敌方中型飞机
-    big_enemies = pygame.sprite.Group()  # 敌方大型飞机组
-    add_big_enemies(big_enemies, enemies, 1)  # 生成若干敌方大型飞机
-    # ====================飞机损毁图像索引====================
-    e1_destroy_index = 0
-    e2_destroy_index = 0
-    e3_destroy_index = 0
-    me_destroy_index = 0
 
     color_black = (0, 0, 0)
     color_green = (0, 255, 0)
     color_red = (255, 0, 0)
     color_white = (255, 255, 255)
+
+    bomb_image = pygame.image.load("image/bomb.png")  # 加载全屏炸弹图标
+    bomb_rect = bomb_image.get_rect()
+    bomb_font = score_font
+    bomb_num = 3  # 初始3个炸弹
 
     level = 1  # 游戏难度级别
     # ====================生成普通子弹====================
@@ -109,7 +101,37 @@ def main():
     bullet1_num = 6  # 定义子弹实例化个数
     for i in range(bullet1_num):
         bullet1.append(bullet.Bullet1(me.rect.midtop))
+    # ====================生成超级子弹==========
+    double_bullet_timer = USEREVENT + 1  # 超级子弹持续时间定时器
+    is_double_bullet = False  # 是否使用超级子弹标志位
+    bullet2 = []
+    bullet2_index = 0
+    bullet2_num = 10  # 定义子弹实例化个数
+    for i in range(bullet2_num // 2):
+        bullet2.append(bullet.Bullet2((me.rect.centerx - 33, me.rect.centery)))
+        bullet2.append(bullet.Bullet2((me.rect.centerx + 30, me.rect.centery)))
+    # ====================实例化敌方飞机====================
+    enemies = pygame.sprite.Group()  # 生成敌方飞机组
+    small_enemies = pygame.sprite.Group()  # 敌方小型飞机组
+    add_small_enemies(small_enemies, enemies, 1)  # 生成若干敌方小型飞机
+    mid_enemies = pygame.sprite.Group()  # 敌方中型飞机组
+    add_mid_enemies(mid_enemies, enemies, 1)  # 生成若干敌方中型飞机
+    big_enemies = pygame.sprite.Group()  # 敌方大型飞机组
+    add_big_enemies(big_enemies, enemies, 1)  # 生成若干敌方大型飞机
+    # ====================实例化补给包==========
+    bullet_supply = supply.BulletSupply(bg_size)
+    bomb_supply = supply.BombSupply(bg_size)
+    supply_timer = USEREVENT  # 补给包发放定时器
+    pygame.time.set_timer(supply_timer, 10 * 1000)  # 定义每30秒发放一次补给包
+    # ====================飞机损毁图像索引====================
+    e1_destroy_index = 0
+    e2_destroy_index = 0
+    e3_destroy_index = 0
+    me_destroy_index = 0
 
+    # ===============================================================================
+    # 主要功能：主循环，响应用户鼠标按键以及键盘事件
+    # ===============================================================================
     while running:
         screen.blit(backgroud, (0, 0))  # 将背景图片打印到内存的屏幕上
         score_text = score_font.render("Score: %s" % str(score), True, color_white)
@@ -140,10 +162,32 @@ def main():
             inc_speed(mid_enemies, 1)
             inc_speed(big_enemies, 1)
 
+        # ====================检测用户的退出及暂停操作====
         for event in pygame.event.get():  # 响应用户的偶然操作
             if event.type == QUIT:  # 如果用户按下屏幕上的关闭按钮，触发QUIT事件，程序退出
                 pygame.quit()
                 sys.exit()
+            elif event.type == KEYDOWN:
+                if event.key == K_SPACE:  # 如果检测到用户按下空格键
+                    if bomb_num:  # 如果炸弹数量大于零，则引爆一颗超级炸弹
+                        bomb_num -= 1
+                        bomb_sound.play()
+                        for each in enemies:
+                            if each.rect.bottom > 0:  # 屏幕上的所有敌机均销毁
+                                each.active = False
+            elif event.type == supply_timer:  # 响应补给发放的事件消息
+                if choice([True, False]):
+                    bomb_supply.reset()
+                else:
+                    bullet_supply.reset()
+            elif event.type == double_bullet_timer:
+                is_double_bullet = False
+                pygame.time.set_timer(double_bullet_timer, 0)
+        # ====================绘制全屏炸弹数量和剩余生命数量===============
+        bomb_text = bomb_font.render("x %d" % bomb_num, True, color_black)
+        bomb_text_rect = bomb_text.get_rect()
+        screen.blit(bomb_image, (10, height - 10 - bomb_rect.height))
+        screen.blit(bomb_text, (20 + bomb_rect.width, height - 10 - bomb_text_rect.height))
         # ====================检测用户的键盘操作====================
         key_pressed = pygame.key.get_pressed()  # 获得用户所有的键盘输入序列
         if key_pressed[K_w] or key_pressed[K_UP]:
@@ -157,9 +201,32 @@ def main():
 
         if not (delay % 10):  # 每十帧发射一颗移动的子弹
             bullet_sound.play()
-            bullets = bullet1
-            bullets[bullet1_index].reset(me.rect.midtop)
-            bullet1_index = (bullet1_index + 1) % bullet1_num
+            if not is_double_bullet:  # 如果当前是普通子弹状态
+                bullets = bullet1
+                bullets[bullet1_index].reset(me.rect.midtop)
+                bullet1_index = (bullet1_index + 1) % bullet1_num
+            else:  # 如果当前是超级子弹状态
+                bullets = bullet2
+                bullets[bullet2_index].reset((me.rect.centerx - 33, me.rect.centery))
+                bullets[bullet2_index + 1].reset((me.rect.centerx + 30, me.rect.centery))
+                bullet2_index = (bullet2_index + 2) % bullet2_num
+        # ====================绘制补给并检测玩家是否获得===
+        if bomb_supply.active:  # 如果是超级炸弹补给包
+            bomb_supply.move()
+            screen.blit(bomb_supply.image, bomb_supply.rect)
+            if pygame.sprite.collide_mask(bomb_supply, me):  # 如果玩家获得超级炸弹补给包
+                get_bomb_sound.play()
+                if bomb_num < 3:
+                    bomb_num += 1
+                bomb_supply.active = False
+        if bullet_supply.active:  # 如果是超级子弹补给包
+            bullet_supply.move()
+            screen.blit(bullet_supply.image, bullet_supply.rect)
+            if pygame.sprite.collide_mask(bullet_supply, me):
+                get_bullet_sound.play()
+                is_double_bullet = True
+                pygame.time.set_timer(double_bullet_timer, 18 * 1000)
+                bullet_supply.active = False
         # ====================子弹与敌机的碰撞检测====================
         for b in bullets:
             if b.active:  # 只有激活的子弹才可能击中敌机
@@ -286,6 +353,9 @@ def main():
         clock.tick(60)  # 设置帧数为60
 
 
+# ===============================================================================
+# 主要功能：程序入口
+# ===============================================================================
 if __name__ == '__main__':
     try:
         main()
