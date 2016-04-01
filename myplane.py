@@ -22,6 +22,7 @@ class MyPlane(pygame.sprite.Sprite):
         self.height - self.rect.height - 60)  # 定义飞机初始化位置，底部预留60像素
         self.speed = 10  # 设置飞机移动速度
         self.active = True  # 设置飞机当前的存在属性，True表示飞机正常飞行，False表示飞机已损毁
+        self.invincible = False  # 飞机初始化时有三秒的无敌时间
 
     # ====================定义四个方向的移动函数====================
     def move_up(self):  # 飞机向上移动的操作函数，其余移动函数方法类似
@@ -51,3 +52,4 @@ class MyPlane(pygame.sprite.Sprite):
     def reset(self):
         self.rect.left, self.rect.top = (self.width - self.rect.width) // 2, (self.height - self.rect.height - 60)
         self.active = True
+        self.invincible = True
