@@ -95,6 +95,14 @@ def main():
     bomb_num = 3  # 初始3个炸弹
 
     level = 1  # 游戏难度级别
+    paused = False  # 标志是否暂停游戏
+    pause_nor_image = pygame.image.load("image/game_pause_nor.png")  # 加载暂停相关按钮
+    pause_pressed_image = pygame.image.load("image/game_pause_pressed.png")
+    resume_nor_image = pygame.image.load("image/game_resume_nor.png")
+    resume_pressed_image = pygame.image.load("image/game_resume_pressed.png")
+    paused_rect = pause_nor_image.get_rect()
+    paused_rect.left, paused_rect.top = width - paused_rect.width - 10, 10  # 设置暂停按钮位置
+    paused_image = pause_nor_image  # 设置默认显示的暂停按钮
 
     life_image = pygame.image.load("image/life.png").convert()
     life_rect = life_image.get_rect()
@@ -191,8 +199,34 @@ def main():
             elif event.type == invincible_time:  # 如果无敌时间已过
                 me.invincible = False
                 pygame.time.set_timer(invincible_time, 0)
+            elif event.type == MOUSEMOTION:
+                if paused_rect.collidepoint(event.pos):  # 如果鼠标悬停在按钮区域
+                    if paused:  # 如果当前的状态是暂停
+                        paused_image = resume_pressed_image
+                    else:
+                        paused_image = pause_pressed_image
+                else:
+                    if paused:
+                        paused_image = resume_nor_image
+                    else:
+                        paused_image = pause_nor_image
+            elif event.type == MOUSEBUTTONDOWN:
+                button_down_sound.play()
+                if event.button == 1 and paused_rect.collidepoint(event.pos):  # 如果检测到用户在指定按钮区域按下鼠标左键
+                    paused = not paused
+                    if paused:  # 如果当前的状态是暂停
+                        paused_image = resume_pressed_image
+                        pygame.time.set_timer(supply_timer, 0)  # 关闭补给机制以及所有音效
+                        pygame.mixer.music.pause()
+                        pygame.mixer.pause()
+                    else:
+                        paused_image = pause_pressed_image
+                        pygame.time.set_timer(supply_timer, 30 * 1000)  # 开启补给机制以及所有音效
+                        pygame.mixer.music.unpause()
+                        pygame.mixer.unpause()
+        screen.blit(paused_image, paused_rect)
 
-        if life_num:  # 如果游戏未被暂停，正常运行
+        if life_num and (not paused):  # 如果游戏未被暂停，正常运行
             # ====================绘制全屏炸弹数量和剩余生命数量===============
             bomb_text = bomb_font.render("x %d" % bomb_num, True, color_black)
             bomb_text_rect = bomb_text.get_rect()
