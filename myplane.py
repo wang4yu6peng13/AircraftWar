@@ -1,6 +1,13 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
+
+# ===============================================================================
+# 主要功能：定义我方飞机类，设置我方飞机的相关属性
+# 算法流程：1）加载飞机图片，定义飞机出现位置
+#           2）定义飞机上下左右四个方向移动的控制函数
+# ===============================================================================
+# 导入相关模块
 import pygame
 
 
@@ -19,7 +26,7 @@ class MyPlane(pygame.sprite.Sprite):
         self.rect = self.image1.get_rect()  # 得到当前我方飞机的位置
         self.width, self.height = bg_size[0], bg_size[1]  # 本地化背景图片的尺寸
         self.rect.left, self.rect.top = (self.width - self.rect.width) // 2, (
-        self.height - self.rect.height - 60)  # 定义飞机初始化位置，底部预留60像素
+            self.height - self.rect.height - 60)  # 定义飞机初始化位置，底部预留60像素
         self.speed = 10  # 设置飞机移动速度
         self.active = True  # 设置飞机当前的存在属性，True表示飞机正常飞行，False表示飞机已损毁
         self.invincible = False  # 飞机初始化时有三秒的无敌时间
