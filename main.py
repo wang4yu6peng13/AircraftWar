@@ -10,6 +10,7 @@ import bullet
 import myplane
 import enemy
 import supply
+import os
 
 # ==========初始化===================
 pygame.init()
@@ -103,6 +104,10 @@ def main():
     paused_rect = pause_nor_image.get_rect()
     paused_rect.left, paused_rect.top = width - paused_rect.width - 10, 10  # 设置暂停按钮位置
     paused_image = pause_nor_image  # 设置默认显示的暂停按钮
+
+    gameover_image = pygame.image.load("image/game_over.png")  # 游戏结束背景图片
+    gameover_rect = gameover_image.get_rect()
+    flag_recorded = False  # 是否已经打开记录文件标志位
 
     life_image = pygame.image.load("image/life.png").convert()
     life_rect = life_image.get_rect()
@@ -399,7 +404,27 @@ def main():
                             each.reset()
 
         elif life_num == 0:  # 生命值为零，绘制游戏结束画面
-            pass
+            screen.blit(gameover_image, gameover_rect)
+            pygame.mixer.music.stop()  # 关闭背景音乐
+            pygame.mixer.stop()  # 关闭所有音效
+            pygame.time.set_timer(supply_timer, 0)  # 关闭补给机制
+
+            if not flag_recorded:  # 读取历史最高分
+                flag_recorded = True
+                if not os.path.exists("score_record.txt"):
+                    with open("score_record.txt", "w") as f:
+                        f.write('0')
+                with open("score_record.txt", "r") as f:
+                    record_score = int(f.read())
+                if score > record_score:  # 如果玩家得分大于历史最高分，则将当前分数存档
+                    with open("score_record.txt", "w") as f:
+                        f.write(str(score))
+                f.close()
+
+            record_score_text = score_font.render("%d" % record_score, True, color_white)
+            screen.blit(record_score_text, (150, 25))
+            game_over_score_text = score_font.render("%d" % score, True, color_white)
+            screen.blit(game_over_score_text, (180, 370))
 
         pygame.display.flip()  # 将内存中绘制好的屏幕刷新到设备屏幕上
         clock.tick(60)  # 设置帧数为60
